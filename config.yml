@@ -1,0 +1,28 @@
+people:
+  - {name: Chris, email: chrisemail@email.com}
+  - {name: Bob, email: bobemail@email.com}
+  - {name: Dan, email: danemail@email.com}
+  - {name: Jo, email: joemail@email.com}
+
+pricelimit: '100'
+
+template: 
+  Ho ho hello {name}
+ 
+
+  Your secret santa for this year is {match}.
+  
+  Price limit is about ${pricelimit}
+  
+  
+  Warmest regards,
+
+  Santa
+
+emailconfig:
+  sendemails: yes
+  smtpserver: smtp.gmail.com
+  smtpport: '465'
+  fromemail: yourgmailaccount@gmail.com
+  smtppwd: yourgmailpassword
+  subject: Secret Santa!!
