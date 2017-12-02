@@ -4,7 +4,7 @@ import random
 import smtplib
 from email.message import EmailMessage
 
-class secretsanta(object):
+class SecretSanta(object):
 	def __init__(self):
 		cwd = os.path.dirname(os.path.abspath(__file__))
 		configfile = os.path.join(cwd,'config.yml')
@@ -70,17 +70,18 @@ class secretsanta(object):
 				print('Email sent')
 
 if __name__ == "__main__":
-	ss = secretsanta()
-	acceptable = None
+	ss = SecretSanta()
+	acceptable = 'None'
 	while acceptable.upper() not in ['Y','']:
 		ss.matchpeople()
 		print('Current matches:')
 		ss.printmatches()
 		acceptable = input("Are these ok? ([Y]/N): ")
-	send = None
+	send = 'None'
 	while send.upper() not in ['Y','N','']:
 		send = input("Would you like to send the emails? ([Y]/N)")
 	if send.upper() in ['Y','']:
 		ss.sendemails(verbose=True)
 	else:
 		print("Exiting without sending")
+
