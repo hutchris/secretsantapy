@@ -2,6 +2,7 @@ import yaml
 import os
 import random
 import smtplib
+from email.message import EmailMessage
 
 class secretsanta(object):
 	def __init__(self):
@@ -20,9 +21,7 @@ class secretsanta(object):
 		complete = False
 		error = False
 		while complete == False or error == True:
-			names = []
-			for person in self.people:
-				names.append(person['name'])
+			names = [p['name'] for p in self.people]
 			for person in self.people:
 				match = random.choice(names)
 				#this check whether the only option for the last person is themself. 
@@ -43,10 +42,8 @@ class secretsanta(object):
 			print('{0}\t-->\t{1}'.format(person['name'],person['match']))
 
 	def rendertemplate(self,persondict):
-		emailsubject = 'Subject: {0}'.format(self.emailconfig['subject'])
 		emailbody = self.template.format(name=persondict['name'],match=persondict['match'],pricelimit=self.pricelimit)
-		renderedtemplate = '{0}\n{1}'.format(emailsubject,emailbody)
-		return(renderedtemplate)
+		return(emailbody)
 
 	def sendemails(self,verbose=False):
 		try:
@@ -55,35 +52,35 @@ class secretsanta(object):
 			smtpobj.login(self.emailconfig['fromemail'],self.emailconfig['smtppwd'])
 		except smtplib.SMTPServerDisconnected:
 			print('Error, something wrong with configured smtpserver,smtpport')
+			raise
 		except smtplib.SMTPAuthenticationError:
 			print('Error, could not login. Check username/password, check that your account allows insecure apps')
 			print('For gmail: Google > my account > Sign-in & security > Connected apps & sites > scroll down and you will find "Allow less secure apps"')
-		except Exception as err:
-			print("Unexpected error. Details: {0}".format(repr(err)))
+			raise
 		for person in self.people:
-			emailtext = self.rendertemplate(person)
+			msg = EmailMessage()
+			msg.set_content(self.rendertemplate(person))
+			msg['from'] = self.emailconfig['fromemail']
+			msg['to'] = person['email']
+			msg['subject'] = self.emailconfig['subject']
 			if verbose:
-				print('Sending the following email to {0} - {1}: \n\n{2}'.format(person['name'],person['email'],emailtext))
-			smtpobj.sendmail(self.emailconfig['fromemail'],person['email'],emailtext)
+				print('Sending the following email to {0} - {1}: \n\n{2}'.format(person['name'],person['email'],msg.get_content()))
+			smtpobj.send_message(msg)
 			if verbose:
 				print('Email sent')
 
 if __name__ == "__main__":
 	ss = secretsanta()
-	ss.matchpeople()
-	acceptable = 'N'
-	while acceptable.upper() != 'Y':
-		print('Current matches')
+	acceptable = None
+	while acceptable.upper() not in ['Y','']:
+		ss.matchpeople()
+		print('Current matches:')
 		ss.printmatches()
-		acceptable = raw_input("Are these ok? (Y/N)")
-		if acceptable.upper() != 'Y':
-			ss.matchpeople()
-	send = raw_input("Would you like to send the emails? (Y/N)")
-	if send.upper() == 'Y':
+		acceptable = input("Are these ok? ([Y]/N): ")
+	send = None
+	while send.upper() not in ['Y','N','']:
+		send = input("Would you like to send the emails? ([Y]/N)")
+	if send.upper() in ['Y','']:
 		ss.sendemails(verbose=True)
-
-
-
-
-			
-
+	else:
+		print("Exiting without sending")
