@@ -1,7 +1,8 @@
 # secretsantapy
 Script to randomly match secret santa participants and send emails
 
-Modify the config.yml file:
+Run: cp example_config.yml config.yml
+Modify config.yml:
 Add user/email address combinations, swap out the names and emails with the ones that come in the template. If you need to add more lines, just copy paste a whole line.
 people:
   - {name: Chris, email: chrisemail@email.com}
