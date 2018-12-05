@@ -2,6 +2,7 @@ import yaml
 import os
 import random
 import smtplib
+import argparse
 from email.message import EmailMessage
 
 class SecretSanta(object):
@@ -70,18 +71,30 @@ class SecretSanta(object):
 				print('Email sent')
 
 if __name__ == "__main__":
+	parser = argparse.ArgumentParser(description="Secret Santa matching and emailing")
+	parser.add_argument('--secret','-s',action='store_true',help='Prevent the displaying of matches')
+	args = parser.parse_args()
 	ss = SecretSanta()
 	acceptable = 'None'
-	while acceptable.upper() not in ['Y','']:
+	if args.secret:
+		print('People:')
+		print(ss.people)
 		ss.matchpeople()
-		print('Current matches:')
-		ss.printmatches()
-		acceptable = input("Are these ok? ([Y]/N): ")
+	else:
+		while acceptable.upper() not in ['Y','']:
+			ss.matchpeople()
+			print('Current matches:')
+			ss.printmatches()
+			acceptable = input("Are these ok? ([Y]/N): ")
 	send = 'None'
+	print('Matching complete')
 	while send.upper() not in ['Y','N','']:
 		send = input("Would you like to send the emails? ([Y]/N)")
 	if send.upper() in ['Y','']:
-		ss.sendemails(verbose=True)
+		if args.secret:
+			ss.sendemails(verbose=False)
+		else:
+			ss.sendemails(verbose=True)
 	else:
 		print("Exiting without sending")
 
