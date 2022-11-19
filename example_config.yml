@@ -19,10 +19,19 @@ template:
 
   Santa
 
+template_html:
+  <html><p>Ho ho hello {name}</p>
+  <p>Your secret santa for this year is {match}.</p>
+  <p>Price limit is about ${pricelimit}</p>
+  <p>Warmest regards,</p>
+  <p>Santa</p></html>
+
 emailconfig:
-  sendemails: yes
-  smtpserver: smtp.gmail.com
-  smtpport: '465'
-  fromemail: yourgmailaccount@gmail.com
-  smtppwd: yourgmailpassword
+  # smtpserver: smtp.gmail.com
+  # smtpport: '465'
+  # smtppwd: yourgmailpassword
+  protocol: ses
   subject: Secret Santa!!
+  fromemail: fromemailaddress
+  sesawsprofile: awsprofilename
+  sesawsregion: awsregion

@@ -1,7 +1,9 @@
 import yaml
+import json
 import os
 import random
 import smtplib
+import boto3
 import argparse
 from email.message import EmailMessage
 
@@ -10,14 +12,14 @@ class SecretSanta(object):
 		cwd = os.path.dirname(os.path.abspath(__file__))
 		configfile = os.path.join(cwd,'config.yml')
 		with open(configfile) as filereader:
-			config = yaml.load(filereader)
+			config = yaml.load(filereader,yaml.SafeLoader)
 		self.people = config['people']
 		self.pricelimit = config['pricelimit']
 		self.template = config['template']
+		self.template_html = config['template_html']
 		self.emailconfig = config['emailconfig']
 		for person in self.people:
 			person['match'] = ''
-
 	def matchpeople(self):
 		complete = False
 		error = False
@@ -37,15 +39,15 @@ class SecretSanta(object):
 				names.remove(match)
 				error = False
 			complete = True
-		
 	def printmatches(self):
 		for person in self.people:
 			print('{0}\t-->\t{1}'.format(person['name'],person['match']))
-
 	def rendertemplate(self,persondict):
 		emailbody = self.template.format(name=persondict['name'],match=persondict['match'],pricelimit=self.pricelimit)
 		return(emailbody)
-
+	def rendertemplate_html(self,persondict):
+		emailbody = self.template_html.format(name=persondict['name'],match=persondict['match'],pricelimit=self.pricelimit)
+		return(emailbody)
 	def sendemails(self,verbose=False):
 		try:
 			smtpobj = smtplib.SMTP_SSL(self.emailconfig['smtpserver'],self.emailconfig['smtpport'])
@@ -69,6 +71,34 @@ class SecretSanta(object):
 			smtpobj.send_message(msg)
 			if verbose:
 				print('Email sent')
+	def sendemails_ses(self,verbose=False):
+		botoSession = boto3.Session(profile_name=self.emailconfig['sesawsprofile'],region_name=self.emailconfig['sesawsregion'])
+		ses = botoSession.client('ses')
+		for person in self.people:
+			response = ses.send_email(
+				Source=self.emailconfig['fromemail'],
+				Destination={
+					'ToAddresses': [
+						person['email'],
+					]
+				},
+				Message={
+					'Subject': {
+						'Data': self.emailconfig['subject'],
+						'Charset': 'UTF-8'
+					},
+					'Body': {
+						'Text': {
+							'Data': self.rendertemplate(person),
+							'Charset': 'UTF-8'
+						},
+						'Html': {
+							'Data': self.rendertemplate_html(person),
+							'Charset': 'UTF-8'
+						}
+					}
+				},
+			)
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description="Secret Santa matching and emailing")
@@ -92,9 +122,15 @@ if __name__ == "__main__":
 		send = input("Would you like to send the emails? ([Y]/N)")
 	if send.upper() in ['Y','']:
 		if args.secret:
-			ss.sendemails(verbose=False)
+			with open('matches.log','w') as f:
+				f.write(json.dumps(ss.people))
+				verb = False
 		else:
-			ss.sendemails(verbose=True)
+			verb = True
+		if ss.emailconfig['protocol'] == 'smtp':
+			ss.sendemails(verbose=verb)
+		elif ss.emailconfig['protocol'] == 'ses':
+			ss.sendemails_ses(verbose=verb)
 	else:
 		print("Exiting without sending")
 
